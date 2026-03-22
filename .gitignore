@@ -1,7 +1,32 @@
-# Byte-compiled / optimized / DLL files
+# Python
 __pycache__/
 *.py[cod]
-
+*.so
+.Python
 build/
-src/fuzzyHSA.egg*
-src/fuzzyHSA/kfd/autogen/*
+dist/
+*.egg-info/
+
+# Virtual environments
+.venv/
+venv/
+
+# Generated bindings
+src/fuzzyHSA/kfd/autogen/*.py
+!src/fuzzyHSA/kfd/autogen/__init__.py
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Linting
+.ruff_cache/
+
+# Fuzzer output
+crashes/

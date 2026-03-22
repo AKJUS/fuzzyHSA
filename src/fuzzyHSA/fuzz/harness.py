@@ -5,17 +5,16 @@ from __future__ import annotations
 
 import random
 import signal
-import sys
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from .types import FuzzResult, FuzzStats, FuzzStatus
 
 if TYPE_CHECKING:
-    from .targets.base import FuzzTarget
-    from ..monitor.dmesg import DmesgMonitor
     from ..logging.crash_logger import CrashLogger
+    from ..monitor.dmesg import DmesgMonitor
+    from .targets.base import FuzzTarget
 
 
 @dataclass

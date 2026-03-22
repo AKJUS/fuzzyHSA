@@ -6,8 +6,7 @@ from __future__ import annotations
 import re
 import subprocess
 from dataclasses import dataclass, field
-from typing import Pattern
-
+from re import Pattern
 
 # Patterns that indicate GPU-related errors
 GPU_ERROR_PATTERNS = (

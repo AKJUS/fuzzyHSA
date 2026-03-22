@@ -1,37 +1,88 @@
 # fuzzyHSA
 
-Testing and Fuzzying Framework for HSA and AMD low level software. 
+KFD/GPU Firmware Fuzzer for AMD GPUs.
 
-Status report of various issues reported by Tinycorp and status of fixes are tracked [here](https://github.com/nod-ai/fuzzyHSA/wiki/Tinygrad-AMD-Linux-Driver-Crash---Hang-tracker-and-updates) 
+## Quick Start
 
-Analysis of [Tinygrad KFD and HSA backends](https://gist.github.com/fxkamd/ffd02d66a2863e444ec208ea4f3adc48) 
+```bash
+# Install uv (if not already installed)
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
-## Installation
+# Clone and setup
+git clone https://github.com/amd/fuzzyHSA.git
+cd fuzzyHSA
 
-1. pip install .
-2. bash autogen_stubs.sh generate
+# Install dependencies and generate bindings
+uv sync
+uv run python generate_bindings.py
 
-## Uninstalling
+# Run the fuzzer
+uv run fuzzyHSA fuzz -n 100 -v
+```
 
-1. bash autogen_stubs.sh clean
-2. pip uninstall fuzzyHSA
+## Requirements
 
-## Testing
+- Linux with AMD GPU (KFD driver)
+- Python 3.10+
+- Linux kernel headers (for binding generation)
 
-1. pip install -e '.[testing]'
-2. python -m pytest test/
+## Usage
 
-## TODO
+```bash
+# List available operations
+uv run fuzzyHSA list-targets
 
-* Use kfd_ioctl to create kfd operations in kfd/ops.py.
-* Utilize the kfd/ops.py in default fuzz tests. 
-* Have ability to pass in user defined config for a dynamic fuzz test.
+# Fuzz for 1000 iterations
+uv run fuzzyHSA fuzz -n 1000
+
+# Fuzz specific operations
+uv run fuzzyHSA fuzz --operations alloc_memory_of_gpu,create_queue
+
+# Reproduce a crash
+uv run fuzzyHSA reproduce crashes/crash_20240321_123456.json
+
+# Show system info
+uv run fuzzyHSA info
+```
+
+## Development
+
+```bash
+# Install with dev dependencies
+uv sync
+
+# Run tests
+uv run pytest
+
+# Run linter
+uv run ruff check src/
+
+# Regenerate bindings after kernel update
+uv run python generate_bindings.py
+```
+
+## Project Structure
+
+```
+src/fuzzyHSA/
+├── kfd/           # KFD driver interface
+│   ├── device.py  # Device discovery
+│   ├── ioctl.py   # IOCTL execution
+│   ├── memory.py  # GPU memory management
+│   └── autogen/   # Generated bindings
+├── fuzz/          # Fuzzing framework
+│   ├── mutators.py
+│   ├── harness.py
+│   └── targets/
+├── monitor/       # Crash detection (dmesg)
+├── logging/       # Crash logging (JSON)
+└── cli.py         # Command-line interface
+```
 
 ## Acknowledgments
 
-This project would like to thank the [tinycorp](https://tinygrad.org/) for their efforts that push the boundaries. Please go checkout their deep-learning framework [tinygrad](https://github.com/tinygrad/tinygrad) and give it a star!
+This project thanks [tinycorp](https://tinygrad.org/) for their efforts pushing boundaries. Check out [tinygrad](https://github.com/tinygrad/tinygrad)!
 
 ## License
 
-fuzzyHSA is licensed under the terms of the Apache 2.0 License.
-See [LICENSE](LICENSE) for more information.
+Apache 2.0 License. See [LICENSE](LICENSE).

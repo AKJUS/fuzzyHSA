@@ -2,7 +2,8 @@
 """Unit tests for fuzz types."""
 
 import pytest
-from fuzzyHSA.fuzz.types import FuzzCase, FuzzResult, FuzzStatus, FuzzStats
+
+from fuzzyHSA.fuzz.types import FuzzCase, FuzzResult, FuzzStats, FuzzStatus
 
 
 class TestFuzzCase:

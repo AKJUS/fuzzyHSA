@@ -1,9 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 """Shared pytest fixtures and configuration."""
 
-import os
 import pytest
-from pathlib import Path
 
 
 def pytest_configure(config):

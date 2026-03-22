@@ -1,14 +1,14 @@
 # SPDX-License-Identifier: Apache-2.0
 """Integration tests for memory operations (requires AMD GPU)."""
 
-import mmap
 import pytest
+
 from fuzzyHSA.kfd import (
     KFDDevice,
-    mmap_anonymous,
     allocate_gpu_memory,
     free_gpu_memory,
     get_ioctls,
+    mmap_anonymous,
 )
 
 
@@ -21,7 +21,6 @@ class TestMemoryMapping:
 
     def test_mmap_auto_cleanup(self):
         mem = mmap_anonymous(0x1000)
-        addr = mem.addr
         mem.unmap()
         # Should not crash, region is unmapped
 

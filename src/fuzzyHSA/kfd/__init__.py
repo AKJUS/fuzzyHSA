@@ -1,24 +1,24 @@
 # SPDX-License-Identifier: Apache-2.0
 """KFD (Kernel Fusion Driver) interface for AMD GPUs."""
 
-from .device import KFDDevice, GPUInfo, discover_gpus
-from .memory import (
-    MemoryRegion,
-    GPUMemory,
-    mmap_anonymous,
-    allocate_gpu_memory,
-    map_to_gpu_memory,
-    free_gpu_memory,
-)
+from .device import GPUInfo, KFDDevice, discover_gpus
 from .ioctl import (
-    IoctlDef,
     IoctlCollection,
-    get_ioctls,
+    IoctlDef,
+    bytes_to_struct,
     clear_ioctl_cache,
     execute_ioctl,
     execute_ioctl_raw,
+    get_ioctls,
     struct_to_bytes,
-    bytes_to_struct,
+)
+from .memory import (
+    GPUMemory,
+    MemoryRegion,
+    allocate_gpu_memory,
+    free_gpu_memory,
+    map_to_gpu_memory,
+    mmap_anonymous,
 )
 
 __all__ = [

@@ -2,8 +2,7 @@
 """Unit tests for crash logging."""
 
 import json
-import pytest
-from pathlib import Path
+
 from fuzzyHSA.fuzz.types import FuzzCase, FuzzResult, FuzzStatus
 from fuzzyHSA.logging import CrashLogger
 
@@ -11,7 +10,7 @@ from fuzzyHSA.logging import CrashLogger
 class TestCrashLogger:
     def test_creates_output_dir(self, temp_dir):
         output = temp_dir / "crashes"
-        logger = CrashLogger(output)
+        CrashLogger(output)
         assert output.exists()
 
     def test_log_creates_file(self, temp_dir):
@@ -59,7 +58,7 @@ class TestCrashLogger:
 
     def test_list_crashes(self, temp_dir):
         logger = CrashLogger(temp_dir)
-        case = FuzzCase("ioctl", "test", b"", 0, "none")
+        FuzzCase("ioctl", "test", b"", 0, "none")
 
         # Log several crashes
         for i in range(3):

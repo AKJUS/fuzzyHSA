@@ -10,16 +10,18 @@ from pathlib import Path
 
 def cmd_fuzz(args: argparse.Namespace) -> int:
     """Run the fuzzer."""
-    from .kfd import KFDDevice, get_ioctls
     from .fuzz import FuzzHarness, HarnessConfig, IoctlTarget
-    from .monitor import DmesgMonitor
+    from .kfd import KFDDevice, get_ioctls
     from .logging import CrashLogger
+    from .monitor import DmesgMonitor
 
     # Check for autogen files
     try:
         get_ioctls()
     except Exception as e:
-        print(f"Error: Could not load KFD ioctls. Run 'bash autogen_stubs.sh generate' first.")
+        print("Error: Could not load KFD ioctls. Generate bindings first:")
+        print("  pip install ctypesgen")
+        print("  python generate_bindings.py")
         print(f"Details: {e}")
         return 1
 
@@ -48,7 +50,7 @@ def cmd_fuzz(args: argparse.Namespace) -> int:
 
         harness = FuzzHarness(target, config, monitor, logger)
 
-        print(f"fuzzyHSA - KFD/GPU Fuzzer")
+        print("fuzzyHSA - KFD/GPU Fuzzer")
         print(f"  Device: {device}")
         print(f"  Target: {target.name} ({len(target.operations)} operations)")
         print(f"  Iterations: {args.iterations}")
@@ -87,8 +89,8 @@ def cmd_list_targets(args: argparse.Namespace) -> int:
 
 def cmd_reproduce(args: argparse.Namespace) -> int:
     """Reproduce a crash from a log file."""
-    from .kfd import KFDDevice, get_ioctls
     from .fuzz import IoctlTarget
+    from .kfd import KFDDevice, get_ioctls
     from .logging import CrashLogger
 
     path = Path(args.crash_file)
@@ -99,7 +101,7 @@ def cmd_reproduce(args: argparse.Namespace) -> int:
     logger = CrashLogger(path.parent)
     result = logger.load(path)
 
-    print(f"Reproducing crash:")
+    print("Reproducing crash:")
     print(f"  Operation: {result.case.operation}")
     print(f"  Seed: {result.case.seed}")
     print(f"  Mutation: {result.case.mutation}")

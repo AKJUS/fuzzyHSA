@@ -2,6 +2,7 @@
 """Integration tests for KFD device operations (requires AMD GPU)."""
 
 import pytest
+
 from fuzzyHSA.kfd import KFDDevice, discover_gpus
 from fuzzyHSA.monitor import is_kfd_available
 

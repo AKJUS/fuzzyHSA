@@ -20,6 +20,15 @@ class Mutator(Protocol):
         ...
 
 
+def _mutate(data: bytes, fn) -> bytes:
+    """Common mutator wrapper: handle empty data and convert to/from bytearray."""
+    if not data:
+        return data
+    buf = bytearray(data)
+    fn(buf)
+    return bytes(buf)
+
+
 @dataclass
 class BitflipMutator:
     """Flip random bits in the data."""
@@ -28,15 +37,10 @@ class BitflipMutator:
     max_flips: int = 8
 
     def mutate(self, data: bytes, rng: random.Random) -> bytes:
-        if not data:
-            return data
-        buf = bytearray(data)
-        num_flips = rng.randint(1, min(self.max_flips, len(buf) * 8))
-        for _ in range(num_flips):
-            byte_idx = rng.randrange(len(buf))
-            bit_idx = rng.randrange(8)
-            buf[byte_idx] ^= 1 << bit_idx
-        return bytes(buf)
+        def flip(buf: bytearray) -> None:
+            for _ in range(rng.randint(1, min(self.max_flips, len(buf) * 8))):
+                buf[rng.randrange(len(buf))] ^= 1 << rng.randrange(8)
+        return _mutate(data, flip)
 
 
 @dataclass
@@ -47,14 +51,10 @@ class ByteflipMutator:
     max_bytes: int = 4
 
     def mutate(self, data: bytes, rng: random.Random) -> bytes:
-        if not data:
-            return data
-        buf = bytearray(data)
-        num_bytes = rng.randint(1, min(self.max_bytes, len(buf)))
-        for _ in range(num_bytes):
-            idx = rng.randrange(len(buf))
-            buf[idx] = rng.randint(0, 255)
-        return bytes(buf)
+        def flip(buf: bytearray) -> None:
+            for _ in range(rng.randint(1, min(self.max_bytes, len(buf)))):
+                buf[rng.randrange(len(buf))] = rng.randint(0, 255)
+        return _mutate(data, flip)
 
 
 # Boundary values lookup: size -> (format, values)
@@ -81,30 +81,24 @@ class BoundaryMutator:
     name: str = "boundary"
 
     def mutate(self, data: bytes, rng: random.Random) -> bytes:
-        if len(data) < 1:
-            return data
-
-        buf = bytearray(data)
-        valid_sizes = [s for s in (1, 2, 4, 8) if s <= len(buf)]
-        if not valid_sizes:
-            return data
-        size = rng.choice(valid_sizes)
-
-        max_offset = len(buf) - size
-        if max_offset < 0:
-            return data
-        offset = rng.randrange((max_offset // size) + 1) * size
-        if offset + size > len(buf):
-            return data
-
-        fmt, values = _BOUNDARY_TABLE[size]
-        value = rng.choice(values)
-        if fmt is None:
-            buf[offset] = value
-        else:
-            struct.pack_into(fmt, buf, offset, value)
-
-        return bytes(buf)
+        def apply(buf: bytearray) -> None:
+            valid_sizes = [s for s in (1, 2, 4, 8) if s <= len(buf)]
+            if not valid_sizes:
+                return
+            size = rng.choice(valid_sizes)
+            max_offset = len(buf) - size
+            if max_offset < 0:
+                return
+            offset = rng.randrange((max_offset // size) + 1) * size
+            if offset + size > len(buf):
+                return
+            fmt, values = _BOUNDARY_TABLE[size]
+            value = rng.choice(values)
+            if fmt is None:
+                buf[offset] = value
+            else:
+                struct.pack_into(fmt, buf, offset, value)
+        return _mutate(data, apply)
 
 
 @dataclass
@@ -115,30 +109,23 @@ class ArithmeticMutator:
     max_delta: int = 35
 
     def mutate(self, data: bytes, rng: random.Random) -> bytes:
-        if len(data) < 1:
-            return data
-
-        buf = bytearray(data)
-        valid_sizes = [s for s in (1, 2, 4) if s <= len(buf)]
-        if not valid_sizes:
-            return data
-        size = rng.choice(valid_sizes)
-
-        max_offset = len(buf) - size
-        if max_offset < 0:
-            return data
-        offset = rng.randrange(max_offset + 1)
-
-        delta = rng.randint(-self.max_delta, self.max_delta) or 1
-
-        fmt, mask = _ARITH_TABLE[size]
-        if fmt is None:
-            buf[offset] = (buf[offset] + delta) & mask
-        else:
-            value = struct.unpack_from(fmt, buf, offset)[0]
-            struct.pack_into(fmt, buf, offset, (value + delta) & mask)
-
-        return bytes(buf)
+        def apply(buf: bytearray) -> None:
+            valid_sizes = [s for s in (1, 2, 4) if s <= len(buf)]
+            if not valid_sizes:
+                return
+            size = rng.choice(valid_sizes)
+            max_offset = len(buf) - size
+            if max_offset < 0:
+                return
+            offset = rng.randrange(max_offset + 1)
+            delta = rng.randint(-self.max_delta, self.max_delta) or 1
+            fmt, mask = _ARITH_TABLE[size]
+            if fmt is None:
+                buf[offset] = (buf[offset] + delta) & mask
+            else:
+                value = struct.unpack_from(fmt, buf, offset)[0]
+                struct.pack_into(fmt, buf, offset, (value + delta) & mask)
+        return _mutate(data, apply)
 
 
 @dataclass
@@ -149,14 +136,12 @@ class ZeroMutator:
     max_size: int = 16
 
     def mutate(self, data: bytes, rng: random.Random) -> bytes:
-        if not data:
-            return data
-        buf = bytearray(data)
-        size = rng.randint(1, min(self.max_size, len(buf)))
-        max_offset = len(buf) - size
-        offset = rng.randrange(max_offset + 1) if max_offset >= 0 else 0
-        buf[offset : offset + size] = b"\x00" * size
-        return bytes(buf)
+        def apply(buf: bytearray) -> None:
+            size = rng.randint(1, min(self.max_size, len(buf)))
+            max_offset = len(buf) - size
+            offset = rng.randrange(max_offset + 1) if max_offset >= 0 else 0
+            buf[offset:offset + size] = b"\x00" * size
+        return _mutate(data, apply)
 
 
 @dataclass

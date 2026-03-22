@@ -2,15 +2,14 @@
 """Unit tests for mutation strategies."""
 
 import random
-import pytest
+
 from fuzzyHSA.fuzz.mutators import (
-    BitflipMutator,
-    ByteflipMutator,
-    BoundaryMutator,
     ArithmeticMutator,
-    ZeroMutator,
+    BitflipMutator,
+    BoundaryMutator,
+    ByteflipMutator,
     CompositeMutator,
-    create_default_mutator,
+    ZeroMutator,
 )
 
 
@@ -141,7 +140,6 @@ class TestCompositeMutator:
         assert isinstance(name, str)
         assert name in ["bitflip", "byteflip", "boundary", "arithmetic", "zero"]
 
-    def test_create_default_mutator(self):
-        mutator = create_default_mutator()
-        assert isinstance(mutator, CompositeMutator)
+    def test_default_composite_has_all_mutators(self):
+        mutator = CompositeMutator()
         assert len(mutator.mutators) == 5

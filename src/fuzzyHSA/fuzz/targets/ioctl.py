@@ -5,15 +5,11 @@ from __future__ import annotations
 
 import random
 import time
-from typing import TYPE_CHECKING
 
-from .base import FuzzTarget
-from ..types import FuzzCase, FuzzResult, FuzzStatus
+from ...kfd import KFDDevice, execute_ioctl_raw, get_ioctls, struct_to_bytes
 from ..mutators import CompositeMutator
-from ...kfd import KFDDevice, get_ioctls, execute_ioctl_raw, struct_to_bytes
-
-if TYPE_CHECKING:
-    from ...kfd import IoctlCollection
+from ..types import FuzzCase, FuzzResult, FuzzStatus
+from .base import FuzzTarget
 
 # Operations that modify/destroy state and could corrupt subsequent tests
 DANGEROUS_OPERATIONS = frozenset({
@@ -75,11 +71,22 @@ class IoctlTarget(FuzzTarget):
                 self._cached_operations = sorted(all_ops)
         return self._cached_operations
 
-    def generate_case(self, seed: int, operation: str | None = None) -> FuzzCase:
-        """Generate a mutated ioctl fuzz case."""
+    def generate_case(
+        self,
+        seed: int,
+        operation: str | None = None,
+        base_values: dict | None = None,
+    ) -> FuzzCase:
+        """
+        Generate a mutated ioctl fuzz case.
+
+        Args:
+            seed: Random seed for reproducibility
+            operation: Operation to fuzz (random if None)
+            base_values: Optional dict of field_name -> value to set before mutation
+        """
         rng = random.Random(seed)
 
-        # Pick operation
         if operation is None:
             if not self.operations:
                 raise ValueError("No operations available to fuzz")
@@ -89,43 +96,8 @@ class IoctlTarget(FuzzTarget):
         if ioctl_def is None:
             raise ValueError(f"Unknown operation: {operation}")
 
-        # Create a valid struct with zeroes
-        struct_instance = ioctl_def.struct_type()
-        original_data = struct_to_bytes(struct_instance)
-
-        # Apply mutation
-        mutated_data, mutation_name = self._mutator.mutate_with_name(original_data, rng)
-
-        return FuzzCase(
-            target=self.name,
-            operation=operation,
-            input_data=mutated_data,
-            seed=seed,
-            mutation=mutation_name,
-        )
-
-    def generate_case_with_valid_base(
-        self,
-        seed: int,
-        operation: str,
-        base_values: dict,
-    ) -> FuzzCase:
-        """
-        Generate a case starting from valid field values.
-
-        Args:
-            seed: Random seed
-            operation: Operation to fuzz
-            base_values: Dict of field_name -> value to set before mutation
-        """
-        rng = random.Random(seed)
-
-        ioctl_def = self._ioctls.get_definition(operation)
-        if ioctl_def is None:
-            raise ValueError(f"Unknown operation: {operation}")
-
-        # Create struct with provided values
-        struct_instance = ioctl_def.struct_type(**base_values)
+        # Create struct (with base values if provided, otherwise zeroes)
+        struct_instance = ioctl_def.struct_type(**(base_values or {}))
         original_data = struct_to_bytes(struct_instance)
 
         # Apply mutation
