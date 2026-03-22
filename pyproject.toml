@@ -1,19 +1,44 @@
 [build-system]
-requires = ["setuptools", "wheel"]
+requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "fuzzyHSA"
-version = "0.1.0"
-description = "A Python HSA/KFD Fuzzer"
+version = "0.2.0"
+description = "KFD/GPU Firmware Fuzzer for AMD GPUs"
 authors = [{name = "Zachary Streeter"}]
 readme = "README.md"
 license = {file = "LICENSE"}
+requires-python = ">=3.10"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: System :: Hardware :: Hardware Drivers",
+    "Topic :: Security",
+]
 
 [project.optional-dependencies]
 testing = [
-    "pytest>=6.0",
+    "pytest>=7.0",
+    "pytest-timeout>=2.0",
 ]
 
-[project.entry-points.console_scripts]
-fuzzyHSA = "fuzzyHSA.fuzzer:main"
+[project.scripts]
+fuzzyHSA = "fuzzyHSA.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "integration: marks tests as integration tests (require AMD GPU hardware)",
+]
+addopts = "-v --tb=short"
